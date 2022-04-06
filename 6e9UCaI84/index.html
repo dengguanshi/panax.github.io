@@ -198,7 +198,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                ADevOps分享
+                                知识点--代理以及反射
                             </h1>
                             
                                     <!--zh-->
@@ -207,11 +207,11 @@
                                         <a itemprop="author" rel="author" href="/">
                                             myhomeme
                                         </a>
-                                        <span class="post-time">&#x65E5;&#x671F;: <a href="#">2022-04-05</a></span>
+                                        <span class="post-time">&#x65E5;&#x671F;: <a href="#">2022-04-06</a></span>
                                         <span class="post-readtime">&#x9605;&#x8BFB;&#x65F6;&#x95F4;:<a
-                                    href="#">0.1
+                                    href="#">6.7
                                     &#x5206;&#x949F;</a></span>
-                                        <span class="post-words">&#x5B57;&#x6570;:<a href="#">27</a></span>
+                                        <span class="post-words">&#x5B57;&#x6570;:<a href="#">1595</a></span>
                                         
                                                 阅读量:
                                                 <span data-hk-page="current"> - </span>
@@ -221,15 +221,291 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>[TOC]</p>
-<h1 id="背景">背景</h1>
-<p>本站用于分享开发运维常用工具网站，分享本人工作生产</p>
+                            <h2 id="代理">代理</h2>
+<h3 id="一-理论">一、理论</h3>
+<figure data-type="image" tabindex="1"><img src="D:%5Cday%5CMyDay%5C%E7%9F%A5%E8%AF%86%E7%82%B9%5Cassets%5Cimage-20210218162343803.png" alt="image-20210218162343803" loading="lazy"></figure>
+<p><strong>代理模式</strong>：提供一个代理对象，由代理对象控制真实对象的访问</p>
+<p><strong>静态代理</strong></p>
+<p>静态表示指定类的代理，代理代表内部维护一个真实对象的引用，在真实对象的前后进行操作</p>
+<p><strong>动态代理</strong></p>
+<p>动态代理是基于Java反射机制实现的，通过反射机制得到对象和方法，并进行操作</p>
+<h3 id="二-代码">二、代码</h3>
+<h4 id="静态代理快速实现">静态代理快速实现</h4>
+<p>静态代理有实现一般为</p>
+<ul>
+<li>代理接口</li>
+</ul>
+<pre><code class="language-java">public interface MyObject {
+    String name = null;
+    void mind();
+}
+</code></pre>
+<ul>
+<li>实现接口的真正对象</li>
+</ul>
+<pre><code class="language-java">public class RealObject implements MyObject{
+    private String name;
+    public void mind(){
+        System.out.println(&quot;富婆&quot;);
+    }
+}
+</code></pre>
+<ul>
+<li>实现接口的代理类</li>
+</ul>
+<pre><code class="language-java">public class StaticProxy implements MyObject{
+    MyObject object;
+    public StaticProxy(MyObject object){
+        this.object = object;
+    }
+    @Override
+    public void mind() {
+        System.out.println(&quot;静态代理前操作&quot;);
+        object.mind();
+        System.out.println(&quot;静态代理后操作&quot;);
+
+    }
+}
+</code></pre>
+<h4 id="动态代理实现">动态代理实现</h4>
+<h5 id="jdk动态代理">JDK动态代理</h5>
+<p>动态代理的实现是实现InvocationHandler接口，通过构造函数传入代理对象</p>
+<pre><code class="language-java">public class MyProxy implements InvocationHandler {
+    private String name;
+    private Object BOSS;
+    public MyProxy(Object object){
+        BOSS = object;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        System.out.println(&quot;打工打工……&quot;);
+        Object result = method.invoke(BOSS,args);
+        System.out.println(&quot;BOSS有钱了&quot;);
+        return result;
+    }
+}
+</code></pre>
+<p>调用，创建代理对象，传入不同的对象就可以代理不同的真实对象</p>
+<pre><code class="language-java">public class Main {
+    public static void main(String[] args) {
+        InvocationHandler invocationHandler = new MyProxy(new RealObject());
+        MyObject object = (MyObject) Proxy.newProxyInstance(RealObject.class.getClassLoader(), 
+                RealObject.class.getInterfaces(),invocationHandler);
+        object.mind();
+    }
+}
+</code></pre>
+<h5 id="cglib动态代理实现">cglib动态代理实现</h5>
+<p>​		对于cglib实现就是直接实现MetnodInterceptor接口，methodProxy.invokeSuper方法执行返回</p>
+<pre><code class="language-java">/*
+* 基于cglib的代理类
+* */
+public class CglibProxy implements MethodInterceptor {
+    @Override
+    public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+        System.out.println(&quot;cglib代理前&quot;);
+        Object o1 = methodProxy.invokeSuper(o,objects);
+        System.out.println(&quot;cglib代理后&quot;);
+        return o1;
+    }
+}
+</code></pre>
+<p>​		调用的话需要使用Enhancer对象，通过创建一个继承与真实对象的代理对象进行使用</p>
+<pre><code class="language-java">//基于cglib代理
+CglibProxy cglibProxy = new CglibProxy();
+Enhancer enhancer = new Enhancer();
+enhancer.setSuperclass(RealObject.class);
+enhancer.setCallback(cglibProxy);
+RealObject realObject = (RealObject) enhancer.create();
+realObject.mind();
+Class&lt;? extends RealObject&gt; classes = realObject.getClass();
+Common.printMethods(classes);
+</code></pre>
+<p>​			继承真实对象的cglib代理对象会附加多个代理方法可以使用</p>
+<figure data-type="image" tabindex="2"><img src="G:%5CMyDays%5C%E7%9F%A5%E8%AF%86%E7%82%B9%5Cassets%5Cimage-20210219111915370.png" alt="image-20210219111915370" loading="lazy"></figure>
+<h3 id="三-原理以及使用场景">三、原理以及使用场景</h3>
+<p>静态代理借用接口实现多个真正对象和代理对象的分开，保证了代码的解耦性</p>
+<p>但是同时，让类和接口增多，如果扩展接口或者类时，需要维护的就是两套代码</p>
+<p>动态代理是借用的java反射机制，无需写源代码</p>
+<p>动态代理是基于接口实现的，代理类会继承Proxy类，所以必须实现InvocationHandler接口</p>
+<p>jdk的动态代理是静态代理的提取和升级，静态代理是每个真实对象都要生成一个代理对象，动态代理则是将代理对象提取成工厂类，使用工厂类动态创建对象的代理对象就行</p>
+<p>对于spring AOP，如果该类存在接口，默认使用的代理的方式为jjdk的动态代理，如果没有实现接口的话，使用的是cglib，实现的原理就是继承真实对象，如果这个类没有实现接口，并标记为final类时，无法使用AOP代理</p>
+<h3 id="四-比较">四、比较</h3>
+<p>1.Filter、Interceptor、AOP的区别是什么？</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Filter过滤器</th>
+<th>Interceptor拦截器</th>
+<th>AOP切面</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原理</td>
+<td>函数回调</td>
+<td>反射机制</td>
+<td>动态代理</td>
+</tr>
+<tr>
+<td>Interceptor</td>
+<td>最先</td>
+<td>其次</td>
+<td>最后</td>
+</tr>
+<tr>
+<td>管理范围</td>
+<td>url规则匹配</td>
+<td>url拦截，方法前后</td>
+<td>类的元数据(类，方法，参数等)</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>权限校验，设置编码</td>
+<td>性能检测</td>
+<td>日志</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>引用</p>
+<p><a href="https://www.jianshu.com/p/aaeb2355ec5c">细说Spring——AOP详解（动态代理实现AOP）</a></p>
+<p><a href="https://juejin.cn/post/6844903762025250824">spring aop原理 JDK动态代理和CGLIB动态代理</a></p>
+</blockquote>
+<h1 id="反射">反射</h1>
+<h3 id="一-理论-2">一、理论</h3>
+<p>反射是Java中，在不方便通过new创建的时候，使用类的方法或者属性(protected属性等)</p>
+<p>获取类有三种方法</p>
+<ul>
+<li>Class.forName(类名)</li>
+<li>object.getClass()</li>
+<li>person.class</li>
+</ul>
+<h3 id="二-代码-2">二、代码</h3>
+<p>我们可以通过反射获取到类的字段，属性，方法</p>
+<pre><code class="language-java">/*
+ * 打印该类的所有方法
+ * 使用方法为：Class&lt;? extends RealObject&gt; classes = realObject.getClass();
+ *            Common.printMethods(classes);
+ * */
+public static void reflectPrintMethods(Class cl) {
+    System.out.println(cl+&quot;的所有方法为：&quot;);
+    //获得包含该类所有其他方法的数组
+    Method[] methods = cl.getDeclaredMethods();
+    //遍历数组
+    for (Method method : methods) {
+        System.out.print(&quot;  &quot;);
+        //获得该方法的修饰符并打印
+        String modifiers = Modifier.toString(method.getModifiers());
+        if (modifiers.length() &gt; 0) {
+            System.out.print(modifiers + &quot; &quot;);
+        }
+        //打印方法名
+        System.out.print(method.getName() + &quot;(&quot;);
+
+        //获得该方法包含所有参数类型的Class对象的数组
+        Class[] paramTypes = method.getParameterTypes();
+        //遍历数组
+        for (int i = 0; i &lt; paramTypes.length; i++) {
+            if (i &gt; 0) {
+                System.out.print(&quot;,&quot;);
+            }
+            System.out.print(paramTypes[i].getName());
+        }
+        System.out.println(&quot;);&quot;);
+    }
+}
+
+/*
+* 根据类打印构造函数
+* */
+public static void printConstuctorMethods(Class cla){
+    System.out.println(cla+&quot;的所有构造函数为：&quot;);
+    Constructor[]constructors = cla.getConstructors();
+    for (Constructor con: constructors) {
+        //获取构造函数名
+        String name = con.getName();
+        //获取构造函数修饰语
+        String modifiers = Modifier.toString(con.getModifiers());
+        if (modifiers.length()&gt;0) {
+            System.out.print(modifiers+ &quot;  &quot;);
+        }
+        System.out.print(name+&quot;(&quot;);
+        printMethodParameter(con.getParameterTypes());
+        System.out.println(&quot;);&quot;);
+
+    }
+}
+/*
+* 根据多个类，打印函数中的参数
+* */
+public static void printMethodParameter(Class[] paramTypes){
+    for (int i = 0; i &lt; paramTypes.length; i++) {
+        System.out.print(paramTypes[i].getName());
+        if (i&lt;paramTypes.length-1){
+            System.out.print(&quot;,&quot;);
+        }
+    }
+
+}
+
+/*
+* 打印可见的字段
+* */
+public static void printFields(Class clas){
+    Field [] fields = clas.getFields();
+    for (Field field : fields) {
+        String fieldName = field.getName();
+        Class fieldType = field.getType();
+        String fieldTypeName = fieldType.getName();
+        System.out.println(fieldTypeName+&quot; &quot;+ fieldName);
+    }
+}
+</code></pre>
+<p>不止是类的可见的属性，不可见的属性也可以查看得到，需要使用setAccessible方法开启属性</p>
+<pre><code class="language-java">// 开启访问私有属性开关
+field.setAccessible(true);
+</code></pre>
+<h3 id="三-原理以及使用场景-2">三、原理以及使用场景</h3>
+<p>​		反射是Java强大的机制，能够访问私有属性变量等，是因为Field，Method和Contructor类是有共同的父类AccessibleObject，类中的方法setAccessible就是可以关闭安全检查的开关</p>
+<p>​		对于现阶段的我们，反射适用的地方就是比如在上次的山西的透传需求中的一个方案，本打算在服务端通过反射获取到请求类中的头信息对象，并重新自定义，再传递，只是请求类是使用的动态代理，没办法获取，如果遇到这种无法获取到类，或者不方便获取，可以尝试使用反射，通过反射获取类的信息</p>
 
                         </div>
                         
                             <div class="post-toc">
                                 <ul class="markdownIt-TOC">
-<li><a href="#%E8%83%8C%E6%99%AF">背景</a></li>
+<li>
+<ul>
+<li><a href="#%E4%BB%A3%E7%90%86">代理</a>
+<ul>
+<li><a href="#%E4%B8%80-%E7%90%86%E8%AE%BA">一、理论</a></li>
+<li><a href="#%E4%BA%8C-%E4%BB%A3%E7%A0%81">二、代码</a>
+<ul>
+<li><a href="#%E9%9D%99%E6%80%81%E4%BB%A3%E7%90%86%E5%BF%AB%E9%80%9F%E5%AE%9E%E7%8E%B0">静态代理快速实现</a></li>
+<li><a href="#%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0">动态代理实现</a>
+<ul>
+<li><a href="#jdk%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86">JDK动态代理</a></li>
+<li><a href="#cglib%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E5%AE%9E%E7%8E%B0">cglib动态代理实现</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E4%B8%89-%E5%8E%9F%E7%90%86%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF">三、原理以及使用场景</a></li>
+<li><a href="#%E5%9B%9B-%E6%AF%94%E8%BE%83">四、比较</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E5%8F%8D%E5%B0%84">反射</a><br>
+*
+<ul>
+<li><a href="#%E4%B8%80-%E7%90%86%E8%AE%BA-2">一、理论</a></li>
+<li><a href="#%E4%BA%8C-%E4%BB%A3%E7%A0%81-2">二、代码</a></li>
+<li><a href="#%E4%B8%89-%E5%8E%9F%E7%90%86%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF-2">三、原理以及使用场景</a></li>
+</ul>
+</li>
 </ul>
 
                             </div>
@@ -245,7 +521,7 @@
 
                                                 <p class="copyright-item">
                                                     <span>&#x6C38;&#x4E45;&#x94FE;&#x63A5;:</span>
-                                                    <span><a href="https://myhomeme.github.io/adevops-fen-xiang/">https://myhomeme.github.io/adevops-fen-xiang/</a></span>
+                                                    <span><a href="https://myhomeme.github.io/6e9UCaI84/">https://myhomeme.github.io/6e9UCaI84/</a></span>
                                                 </p>
 
                                                 <p class="copyright-item">
@@ -260,9 +536,9 @@
                                                                     <span style="margin-right:15px">
                         <i class="post-share"></i>
                         <span>&#x5206;&#x4EAB;:</span>
-                                                                    <a title="QR 码" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://myhomeme.github.io/adevops-fen-xiang/"><i class="fa fa-qrcode"></i></a>
-                                                                    <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://myhomeme.github.io/adevops-fen-xiang/&sharesource=qzone&title=ADevOps分享&pics=https://myhomeme.github.io/images/avatar.png?v=1649209598927&summary="><i class="fa fa-qq"></i></a>
-                                                                    <a title="新浪微博" target="_blank" href="https://service.weibo.com/share/share.php?url=https://myhomeme.github.io/adevops-fen-xiang/&sharesource=weibo&title=ADevOps分享 + " - " + &pic="https://myhomeme.github.io/images/avatar.png?v=1649209598927 "><i class="fa fa-weibo "></i></a>
+                                                                    <a title="QR 码" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://myhomeme.github.io/6e9UCaI84/"><i class="fa fa-qrcode"></i></a>
+                                                                    <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://myhomeme.github.io/6e9UCaI84/&sharesource=qzone&title=知识点--代理以及反射&pics=https://myhomeme.github.io/images/avatar.png?v=1649209598927&summary="><i class="fa fa-qq"></i></a>
+                                                                    <a title="新浪微博" target="_blank" href="https://service.weibo.com/share/share.php?url=https://myhomeme.github.io/6e9UCaI84/&sharesource=weibo&title=知识点--代理以及反射 + " - " + &pic="https://myhomeme.github.io/images/avatar.png?v=1649209598927 "><i class="fa fa-weibo "></i></a>
 
                                                                     </span>
                                                                     
@@ -286,11 +562,11 @@
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://myhomeme.github.io/DOiWDaLRj/">
-                                                                                            知识点--dubbo以及RPC
-                                                                                        </a>
-                                                                                        
                                                                                             
+                                                                                                <a class="next" rel="next" href="https://myhomeme.github.io/DOiWDaLRj/">
+                                                                                                    知识点--dubbo以及RPC
+                                                                                                </a>
+                                                                                                
                                                                                 </section>
                     </article>
                 </div>
