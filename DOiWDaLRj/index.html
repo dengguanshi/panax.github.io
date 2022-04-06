@@ -46,7 +46,6 @@
                                 })();
                             </script>
                             
-        <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js"></script>
 </head>
 
 <body>
@@ -196,69 +195,195 @@
     
             <div class="main">
                 <div class="container">
-                    <div class="intro">
-                        <div class="avatar">
-                            <a href="https://myhomeme.github.io"><img src="https://myhomeme.github.io/images/avatar.png?v=1649209427159"></a>
-                        </div>
-                        <div class="nickname">
-                            huangzb
-                        </div>
-                        <div class="description">
-                            <span id="subtitle">
+                    <article class="post-wrap">
+                        <header class="post-header">
+                            <h1 class="post-title">
+                                知识点--dubbo以及RPC
+                            </h1>
+                            
+                                    <!--zh-->
+                                    <div class="post-meta zh">
+                                        &#x4F5C;&#x8005;:
+                                        <a itemprop="author" rel="author" href="/">
+                                            myhomeme
+                                        </a>
+                                        <span class="post-time">&#x65E5;&#x671F;: <a href="#">2022-04-06</a></span>
+                                        <span class="post-readtime">&#x9605;&#x8BFB;&#x65F6;&#x95F4;:<a
+                                    href="#">3.3
+                                    &#x5206;&#x949F;</a></span>
+                                        <span class="post-words">&#x5B57;&#x6570;:<a href="#">959</a></span>
+                                        
+                                            <span class="post-category">&#x5206;&#x7C7B;:
+                                
+                                <a href="https://myhomeme.github.io/MDIu8YXcp/">RPC</a>
+                                
+                                <a href="https://myhomeme.github.io/OHckfCcp2Y/">Dubbo</a>
                                 
                             </span>
+                                            
+                                                阅读量:
+                                                <span data-hk-page="current"> - </span>
+                                                
+                                    </div>
+                                    
+                        </header>
+                        
+                        <div class="post-content">
+                            <p>[TOC]</p>
+<h2 id="前言">前言</h2>
+<p>​		我们现在维护的项目是ESB和HSF们对于HSF而言，就是我们改造了的dubbo框架,对于dubbo框架,最重要的也是RPC机制,原来公司使用的是ESB＋weblogic+tuxedo+服务一套调用各个服务,esb进行的统一的监控和管控,有较好的容纳性,随着服务的增加和日渐的多样化,定位问题变得更加繁琐,现大部分服务已经使用dubbo框架重写,由esb和zookeeper共同管理,并且基于dubbo的框架,有自己的一套治理中心,我们自己做的监控系统也集成了这个部分,dubbo相比于原来的架构而言,优势就是架构简单易懂,消费者生产者模式,容错性更强,监控运营也更加方便,通过zookeeper的机制随时监控各个服务的状态</p>
+<h2 id="rpc">RPC</h2>
+<h3 id="1理论知识">1.理论知识</h3>
+<p>​		我们dubbo和esb的主要功能都是提供RPC服务(Remote ProcedureCall),远程过程调用,服务请求调用,使用HTTP协议就行了,像之前esb使用的就是http协议1.1,使用创建http客户端,发送请求报文到对应的机器上进行处理,但是为啥要替换成RPC了呢,因为针对与http报文传输,使用报文传输是文本编码,并且还有一些无用的头信息以及数据占用空间,比如dubbo的RPC就是使用的是自定义的TCP协议,能够提高传输数据的利用率,并且面对我们日常千万级流量的情况下,还需要一些高级的特性,流量监控,权限控制等等,在传输过程中提高利用率,在使用过程中提高效率,这也是使用RPC的原因</p>
+<p>​		RPC是远程过程调用,调用包括传输协议和序列化协议</p>
+<ul>
+<li>传输协议可以是多中,谷歌的grpc是采用http2协议,dubbo使用的是自定义的tcp协议</li>
+<li>序列化协议,常见的有基于文本编码的json协议,基于二进制的hessian协议(默认dubbo),esb使用的是webservice(soap文本协议)</li>
+</ul>
+<h3 id="2代码">2.代码</h3>
+<p>针对与dubbo,主要的组成部分有,接口,生产者,消费者,zookeeper</p>
+<p>针对</p>
+<p>那么如何具体实现dubbo框架的运行呢,我们通过编写一个服务的调用来理解框架的运行原理,虽然原来在学习的过程中也有实现过这部分代码,但是原理上并没有理解清楚,dubbo主要运用了Java的动态代理,</p>
+<p>\</p>
+<h2 id="dubbo">dubbo</h2>
+<h3 id="1理论知识-2">1.理论知识</h3>
+<blockquote>
+<p>其核心部分包含:</p>
+<ol>
+<li>远程通讯: 提供对多种基于长连接的NIO框架抽象封装，包括多种线程模型，序列化，以及“请求-响应”模式的信息交换方式。</li>
+<li>集群容错: 提供基于接口方法的透明远程过程调用，包括多协议支持，以及软负载均衡，失败容错，地址路由，动态配置等集群支持。</li>
+<li>自动发现: 基于注册中心目录服务，使服务消费方能动态的查找服务提供方，使地址透明，使服务提供方可以平滑增加或减少机器。</li>
+</ol>
+</blockquote>
+<h3 id="2运维知识">2.运维知识</h3>
+<blockquote>
+<p><a href="https://blog.css8.cn/post/16858762.html">dubbo+zookeeper模拟宕机后问题复现及解决办法-白红宇的个人博客 (css8.cn)</a></p>
+</blockquote>
+<ul>
+<li>当zk集群超过半数宕机后，之前的服务都能正常使用，通过缓存取的服务信息</li>
+<li>当zk集群超过半数宕机后，新的服务无法发布到集群中</li>
+<li>当集群重新启动后，zk可以自动重连，但是消费者会在一段时间后报错，无法找到提供者，必须重启提供者才行，消费者不需要重启。</li>
+<li></li>
+</ul>
+
                         </div>
-                        <div class="links">
+                        
+                            <div class="post-toc">
+                                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#rpc">RPC</a>
+<ul>
+<li><a href="#1%E7%90%86%E8%AE%BA%E7%9F%A5%E8%AF%86">1.理论知识</a></li>
+<li><a href="#2%E4%BB%A3%E7%A0%81">2.代码</a></li>
+</ul>
+</li>
+<li><a href="#dubbo">dubbo</a>
+<ul>
+<li><a href="#1%E7%90%86%E8%AE%BA%E7%9F%A5%E8%AF%86-2">1.理论知识</a></li>
+<li><a href="#2%E8%BF%90%E7%BB%B4%E7%9F%A5%E8%AF%86">2.运维知识</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+                            </div>
                             
                                 
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                    <a class="link-item" href="1413213815" title="qq"><i class="fa fa-qq"></i></a>
                                     
-                                        
-                                
-                                        
-                        </div>
-                    </div>
+                                            <!--zh-->
+                                            <section class="post-copyright zh">
+                                                <p class="copyright-item ">
+                                                    <span>&#x4F5C;&#x8005;:</span>
+                                                    <span>myhomeme</span>
+                                                </p>
+
+                                                <p class="copyright-item">
+                                                    <span>&#x6C38;&#x4E45;&#x94FE;&#x63A5;:</span>
+                                                    <span><a href="https://myhomeme.github.io/DOiWDaLRj/">https://myhomeme.github.io/DOiWDaLRj/</a></span>
+                                                </p>
+
+                                                <p class="copyright-item">
+                                                    <span>&#x534F;&#x8BAE;:</span>
+                                                    <span>MIT License</span>
+                                                </p>
+                                            </section>
+                                            
+                                                
+                                                    
+                                                                    <!--Share-->
+                                                                    <span style="margin-right:15px">
+                        <i class="post-share"></i>
+                        <span>&#x5206;&#x4EAB;:</span>
+                                                                    <a title="QR 码" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://myhomeme.github.io/DOiWDaLRj/"><i class="fa fa-qrcode"></i></a>
+                                                                    <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://myhomeme.github.io/DOiWDaLRj/&sharesource=qzone&title=知识点--dubbo以及RPC&pics=https://myhomeme.github.io/images/avatar.png?v=1649209427159&summary="><i class="fa fa-qq"></i></a>
+                                                                    <a title="新浪微博" target="_blank" href="https://service.weibo.com/share/share.php?url=https://myhomeme.github.io/DOiWDaLRj/&sharesource=weibo&title=知识点--dubbo以及RPC + " - " + &pic="https://myhomeme.github.io/images/avatar.png?v=1649209427159 "><i class="fa fa-weibo "></i></a>
+
+                                                                    </span>
+                                                                    
+                                                                            <!--zh-->
+                                                                            <section class="post-tags zh ">
+                                                                                <div>
+                                                                                    <span>&#x6807;&#x7B7E;:</span>
+                                                                                    <span class="tag ">
+                        
+                        
+                        <a href="https://myhomeme.github.io/MDIu8YXcp/">#
+                    RPC
+                        </a>
+                        
+                        <a href="https://myhomeme.github.io/OHckfCcp2Y/">#
+                    Dubbo
+                        </a>
+                        
+                            
+                                </span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <a href="javascript:window.history.back();">
+                        &#x8FD4;&#x56DE;</a>
+                                                                                    <span>&dot;</span>
+                                                                                    <a href="#">&#x4E3B;&#x9875;</a>
+                                                                                </div>
+                                                                            </section>
+
+                                                                            
+                                                                                <!---->
+                                                                                <section class="post-nav">
+                                                                                    
+                                                                                            
+                                                                                                <a class="next" rel="next" href="https://myhomeme.github.io/adevops-fen-xiang/">
+                                                                                                    ADevOps分享
+                                                                                                </a>
+                                                                                                
+                                                                                </section>
+                    </article>
                 </div>
+                
+                                            
+                                                <script type="application/javascript" src="//unpkg.com/valine@latest/dist/Valine.min.js"></script>
+<div id="vlaine-comment"></div>
+<script type="application/javascript">
+    new Valine({
+        el: '#vlaine-comment',
+        appId: 'E3b4EfhBz5L4U9oppKuLkt5l-gzGzoHsz',
+        appKey: 'e27stXuqWcWyptJF7Jc5rFq2',
+        pageSize: 10,
+        avatar: 'mp',
+        placeholder: '来都来了，不高低整两句？',
+        visitor: true,
+        highlight: true,
+        recordIP: true,
+    })
+</script>
+                                                    
             </div>
     </div>
-
-</body>
-<script>
-    // type 
-    var typed = new Typed("#subtitle", {
-        strings: ['', '', ''],
-        startDelay: 10,
-        typeSpeed: 200,
-        loop: true,
-        backSpeed: 100,
-        showCursor: true
-    });
-    //head title
-    var titleTime;
-    document.addEventListener("visibilitychange", function() {
-        document.hidden ? (document.title = "\uD83D\uDE25" + OriginTitile, clearTimeout(titleTime)) : (document.title = "\uD83D\uDE1D" + OriginTitile, titleTime = setTimeout(function() {
-            document.title = OriginTitile
-        }, 2E3))
-    });
-    var OriginTitile = document.title;
-</script>
-
+    </div>
+    </div>
+    
         <footer id="footer" class="footer">
             <div class="copyright">
                 
@@ -313,5 +438,10 @@
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>
+        </div>
+</body>
+<script>
+    scroll();
+</script>
 
 </html>
